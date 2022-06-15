@@ -5,6 +5,7 @@ import seaborn as sns
 
 db = db_creator.db_constructor()
 
-fig, ax = plt.subplots()
-ax.plot(db.index, db.open)
+sns.set_theme(style = 'whitegrid')
+sns.lineplot(data = db[['open']], palette = 'tab10')
+
 plt.show()

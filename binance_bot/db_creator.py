@@ -31,6 +31,7 @@ def db_constructor():
     SYMBOL = 'BTCUSDT'
     INTERVAL = '15m'
     LIMIT = '1000'
+    STARTTIME = '1654819200000'
     PARAMETER = 'open'
     COLUMNS = [
         'open',
@@ -44,7 +45,7 @@ def db_constructor():
     client = Client(base_url='https://testnet.binance.vision')
 
     #creates an array with all the infos
-    klines = np.array(client.klines(symbol = SYMBOL, interval = INTERVAL, limit = LIMIT))
+    klines = np.array(client.klines(symbol = SYMBOL, interval = INTERVAL, limit = LIMIT, startTime = STARTTIME))
 
     klines_columns = [
         'open time', 
