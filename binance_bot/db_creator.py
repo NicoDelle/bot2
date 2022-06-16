@@ -1,12 +1,17 @@
 def set_type(db):
+
+    """
+    trasforma tutti gli elementi del DataFrame in float, ad eccezine delle timestamps
+    """
+
     import pandas as pd
-    import functions as f
+    import generic_tools as gt
 
     df = pd.DataFrame()
 
     for column in db.columns:
         if column != 'time':
-            df[column] = f.tonumerical(db[column])
+            df[column] = gt.tonumerical(db[column])
         
         else:
             df[column] = db[column]
@@ -25,9 +30,10 @@ def db_constructor():
     import seaborn as sns
 
     #personal modules
-    import functions as f
+    import generic_tools as gt
+    import specific_tools as st
 
-    #settings
+    #settings-------------------------------------
     SYMBOL = 'BTCUSDT'
     INTERVAL = '15m'
     LIMIT = '1000'
@@ -41,7 +47,7 @@ def db_constructor():
         'volume',
         'trades'
         ]
-
+    #----------------------------------------------
     client = Client(base_url='https://testnet.binance.vision')
 
     #creates an array with all the infos
@@ -65,7 +71,7 @@ def db_constructor():
     db = pd.DataFrame(data = klines, columns = klines_columns)
 
     #from timestamps to date
-    db['time'] = f.todate(db['open time'])
+    db['time'] = gt.todate(db['open time'])
   
     #cleans the dataframe
     labels = [

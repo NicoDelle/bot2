@@ -1,11 +1,22 @@
-import db_creator
+#third-party imports
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 
-db = db_creator.db_constructor()
+#personal imports
+import db_creator as dbc
+import generic_tools as gt
 
-sns.set_theme(style = 'whitegrid')
-sns.lineplot(data = db[['open']], palette = 'tab10')
+#constructor of the database
+db = dbc.db_constructor()
 
-plt.show()
+
+#SETTINGS------------------------------
+
+MAKE_PLOT = 0 #0 -> non fare il grafico / 1 -> fai il grafico
+TO_PLOT = db['open']
+
+#--------------------------------------
+
+if MAKE_PLOT == 0:
+
+    gt.mkplot(db['open'])
+
