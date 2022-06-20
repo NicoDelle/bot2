@@ -15,6 +15,9 @@ def todate(timestamp_series):
     
     return(pd.Series(data = ticks))
 
+#-------------------------------------------------------
+
+
 def tonumerical(Series):
     """
     changes any element of a list-like object into float
@@ -28,6 +31,9 @@ def tonumerical(Series):
         temporary_series.append(float(element))
     
     return(np.array(temporary_series))
+
+#-------------------------------------------------------
+
 
 def mkplot(timeSeries):
 

@@ -94,6 +94,4 @@ def db_constructor():
     df['hhv5'] = st.hhv5(df['high'])
     df['llv5'] = st.llv5(df['low'])
 
-
-
     return(df)

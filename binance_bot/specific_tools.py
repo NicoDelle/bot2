@@ -26,6 +26,8 @@ def llv5(prices):
     """
     return(prices.rolling(5).min())
 
+#-------------------------------------------------------
+
 def crossover(array1, array2):
     """
     returns a list of booleans: True if array1 crossed over array2 in that specific position, otherwise returns False
@@ -37,6 +39,8 @@ def crossunder(array1, array2):
     returns a list of booleans: True if array1 crossed under array2 in that specific position, otherwise returns False
     """
     return (array1 < array2) & (array1.shift(1) > array2.shift(1))
+
+#-------------------------------------------------------
 
 def marketposition_generator(enter_rules, exit_rules):
     """
@@ -118,4 +122,5 @@ def apply_trading_system(dataframe, instrument, costs, direction, order_type, op
 
     return dataframe
 
+#-------------------------------------------------------
 

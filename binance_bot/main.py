@@ -20,7 +20,6 @@ ORDER_TYPE = 'market'
 
 #--------------------------------------
 
-
 #constructor of the database
 if STATUS == 'offline':
 
@@ -31,10 +30,12 @@ else:
     db = dbc.db_constructor()
     db.to_csv('klinesBTCUSDT.csv')
 
+#decide wether to make a plot or not
 if MAKE_PLOT == 1:
 
     gt.mkplot(db[TO_PLOT])
 
+#builds enter and exit rules, depending on DIRECTION
 if DIRECTION == 'long':
     
     enter_rules = st.crossover(db.close, db.hhv20.shift(1))
@@ -45,5 +46,6 @@ else:
     enter_rules = st.crossunder(db.close, db.llv20.shift(1))
     exit_rules = st.crossover(db.close, db.hhv5.shift(1))
 
+#backtest
 trading_system = st.apply_trading_system(db, INSTRUMENT, COSTS, DIRECTION, ORDER_TYPE, OPERATION_MONEY, enter_rules, exit_rules)
 
