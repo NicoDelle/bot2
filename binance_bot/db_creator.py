@@ -88,4 +88,12 @@ def db_constructor():
     #sets all datas to floats and sets new index
     df = set_type(db)
 
+    #creates new columns
+    df['hhv20'] = st.hhv20(df['high'])
+    df['llv20'] = st.llv20(df['low'])
+    df['hhv5'] = st.hhv5(df['high'])
+    df['llv5'] = st.llv5(df['low'])
+
+
+
     return(df)
