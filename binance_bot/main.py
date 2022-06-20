@@ -15,7 +15,7 @@ STATUS = 'online'
 COSTS = 0
 INSTRUMENT = 1 #1 -> equity/forex, 2 -> future
 OPERATION_MONEY = 10000
-DIRECTION = 'short'
+DIRECTION = 'long'
 ORDER_TYPE = 'market'
 
 #--------------------------------------

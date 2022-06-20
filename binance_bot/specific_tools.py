@@ -66,6 +66,8 @@ def marketposition_generator(enter_rules, exit_rules):
 
     return df['mp new']
 
+#-----------------------------------------------
+
 def apply_trading_system(dataframe, instrument, costs, direction, order_type, operation_money, enter_rules, exit_rules):
     
     """
@@ -91,7 +93,7 @@ def apply_trading_system(dataframe, instrument, costs, direction, order_type, op
     #extends the new columns where necessary
     dataframe['entry_price'] = dataframe['entry_price'].fillna(method = 'ffill')
     if instrument == 1:
-        dataframe['number_of_stocks'] = dataframe['number_of_stocks'].apply(lambda x: round(x, 0)).fillna(method = 'ffill')
+        dataframe['number_of_stocks'] = dataframe['number_of_stocks'].fillna(method = 'ffill')
 
     #marksthe entries
     dataframe['events_in'] = np.where((dataframe.mp.shift(1) == 0) & (dataframe.mp == 1), 'entry', '')
@@ -112,7 +114,7 @@ def apply_trading_system(dataframe, instrument, costs, direction, order_type, op
     dataframe['closed_equity'] = dataframe.operations.fillna(0).cumsum()
     dataframe['open_equity'] = dataframe.closed_equity + dataframe.open_operations - dataframe.operations.fillna(0)
 
-    dataframe.to_csv('tradin_system.csv')
+    dataframe.to_csv('trading_system.csv')
 
     return dataframe
 
