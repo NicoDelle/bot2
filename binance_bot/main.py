@@ -15,7 +15,7 @@ STATUS = 'online'
 COSTS = 0
 INSTRUMENT = 1 #1 -> equity/forex, 2 -> future
 OPERATION_MONEY = 10000
-DIRECTION = 'long'
+DIRECTION = 'short'
 ORDER_TYPE = 'market'
 
 #--------------------------------------
@@ -35,8 +35,15 @@ if MAKE_PLOT == 1:
 
     gt.mkplot(db[TO_PLOT])
 
-enter_rules = st.crossover(db.close, db.hhv20.shift(1))
-exit_rules = st.crossunder(db.close, db.llv5.shift(1))
+if DIRECTION == 'long':
+    
+    enter_rules = st.crossover(db.close, db.hhv20.shift(1))
+    exit_rules = st.crossunder(db.close, db.llv5.shift(1))  
+
+else:
+
+    enter_rules = st.crossunder(db.close, db.llv20.shift(1))
+    exit_rules = st.crossover(db.close, db.hhv5.shift(1))
 
 trading_system = st.apply_trading_system(db, INSTRUMENT, COSTS, DIRECTION, ORDER_TYPE, OPERATION_MONEY, enter_rules, exit_rules)
 
