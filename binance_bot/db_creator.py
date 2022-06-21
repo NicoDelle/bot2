@@ -37,7 +37,7 @@ def db_constructor():
     SYMBOL = 'BTCUSDT'
     INTERVAL = '15m'
     LIMIT = '1000'
-    STARTTIME = '1654819200000'
+    DEFAULT_TIME = '1654819200000'
     PARAMETER = 'open'
     COLUMNS = [
         'open',
@@ -51,10 +51,10 @@ def db_constructor():
     client = Client(base_url='https://testnet.binance.vision')
 
     #creates an array with all the infos
-    klines = np.array(client.klines(symbol = SYMBOL, interval = INTERVAL, limit = LIMIT, startTime = STARTTIME))
+    klines = np.array(client.klines(symbol = SYMBOL, interval = INTERVAL, limit = LIMIT, startTime = DEFAULT_TIME))
 
     klines_columns = [
-        'open time', 
+        'timestamp', 
         'open', 
         'high', 
         'low',
@@ -71,11 +71,10 @@ def db_constructor():
     db = pd.DataFrame(data = klines, columns = klines_columns)
 
     #from timestamps to date
-    db['time'] = gt.todate(db['open time'])
+    db['time'] = gt.todate(db['timestamp'])
   
     #cleans the dataframe
     labels = [
-        'open time',
         'close time',
         'quote asset volume',
         'Taker buy base asset volume',
@@ -88,10 +87,14 @@ def db_constructor():
     #sets all datas to floats and sets new index
     df = set_type(db)
 
+    df.to_csv(f'{INTERVAL}klines-{SYMBOL}')
+
     #creates new columns
     df['hhv20'] = st.hhv20(df['high'])
     df['llv20'] = st.llv20(df['low'])
     df['hhv5'] = st.hhv5(df['high'])
     df['llv5'] = st.llv5(df['low'])
+
+#usa le timestamps per decidere da dove riprendere il flusso di dati
 
     return(df)
