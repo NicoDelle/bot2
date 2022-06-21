@@ -20,7 +20,7 @@ def set_type(db):
     return(df)
 
 
-def db_constructor():
+def db_constructor(symbol, interval, limit, timestamp):
 
     #third-party imports
     from binance.spot import Spot as Client
@@ -31,13 +31,8 @@ def db_constructor():
 
     #personal modules
     import generic_tools as gt
-    import specific_tools as st
 
-    #settings-------------------------------------
-    SYMBOL = 'BTCUSDT'
-    INTERVAL = '15m'
-    LIMIT = '1000'
-    DEFAULT_TIME = '1654819200000'
+    #INFOS-------------------------------------
     PARAMETER = 'open'
     COLUMNS = [
         'open',
@@ -51,7 +46,7 @@ def db_constructor():
     client = Client(base_url='https://testnet.binance.vision')
 
     #creates an array with all the infos
-    klines = np.array(client.klines(symbol = SYMBOL, interval = INTERVAL, limit = LIMIT, startTime = DEFAULT_TIME))
+    klines = np.array(client.klines(symbol = symbol, interval = interval, limit = limit, startTime = timestamp))
 
     klines_columns = [
         'timestamp', 
@@ -87,14 +82,20 @@ def db_constructor():
     #sets all datas to floats and sets new index
     df = set_type(db)
 
-    df.to_csv(f'{INTERVAL}klines-{SYMBOL}')
-
-    #creates new columns
-    df['hhv20'] = st.hhv20(df['high'])
-    df['llv20'] = st.llv20(df['low'])
-    df['hhv5'] = st.hhv5(df['high'])
-    df['llv5'] = st.llv5(df['low'])
-
-#usa le timestamps per decidere da dove riprendere il flusso di dati
+    df.to_csv(f'{interval}klines-{symbol}')
 
     return(df)
+
+#------------------------------------------------------------------
+
+def db_from_csv(symbol, interval, limit):
+
+    import pandas as pd
+
+    db1 = pd.read_csv(f'{interval}klines-{symbol}')
+    timestamp = int(db1.timestamp.iloc[-1] + 900000)
+
+    db2 = db_constructor(symbol, interval, limit, timestamp)
+    db = pd.concat([db1, db2])
+
+    return db

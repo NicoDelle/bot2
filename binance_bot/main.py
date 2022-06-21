@@ -8,9 +8,27 @@ import specific_tools as st
 
 #SETTINGS------------------------------
 
+SYMBOL = 'BTCUSDT'
+INTERVAL = '15m'
+LIMIT = '1000'
+DEFAULT_TIME = '1654819200000'
+PARAMETER = 'open'
+COLUMNS = [
+    'open',
+    'high',
+    'low',
+    'close',
+    'volume',
+    'trades'
+    ]
+
+#--------------------------------------
+
 MAKE_PLOT = 0 #0 -> non fare il grafico / 1 -> fai il grafico
 TO_PLOT = 'open'
 STATUS = 'online'
+
+#--------------------------------------
 
 COSTS = 0
 INSTRUMENT = 1 #1 -> equity/forex, 2 -> future
@@ -21,14 +39,14 @@ ORDER_TYPE = 'market'
 #--------------------------------------
 
 #constructor of the database
-if STATUS == 'offline':
 
-    db = pd.read_csv('klinesBTCUSDT.csv')
-
-else:
     
-    db = dbc.db_constructor()
-    db.to_csv('klinesBTCUSDT.csv')
+db = dbc.db_constructor(SYMBOL, INTERVAL, LIMIT, DEFAULT_TIME)
+
+db['hhv20'] = st.hhv20(db['high'])
+db['llv20'] = st.llv20(db['low'])
+db['hhv5'] = st.hhv5(db['high'])
+db['llv5'] = st.llv5(db['low'])
 
 #decide wether to make a plot or not
 if MAKE_PLOT == 1:
