@@ -82,7 +82,7 @@ def db_constructor(symbol, interval, limit, timestamp):
     #sets all datas to floats and sets new index
     df = set_type(db)
 
-    df.to_csv(f'{interval}klines-{symbol}')
+    df.to_csv(f'{interval}klines-{symbol}.csv')
 
     return(df)
 
@@ -92,10 +92,17 @@ def db_from_csv(symbol, interval, limit):
 
     import pandas as pd
 
-    db1 = pd.read_csv(f'{interval}klines-{symbol}')
+    db1 = pd.read_csv(f'{interval}klines-{symbol}.csv', index_col = 'time')
     timestamp = int(db1.timestamp.iloc[-1] + 900000)
-
     db2 = db_constructor(symbol, interval, limit, timestamp)
+    
+    if len(db2) != 1000:
+        repeat = False
+    
+    else:
+        repeat = True
+    
     db = pd.concat([db1, db2])
-
-    return db
+    db.to_csv(f'{interval}klines-{symbol}.csv')
+    
+    return db, repeat

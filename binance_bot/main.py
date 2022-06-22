@@ -1,4 +1,5 @@
 #third-party imports
+from graphql import do_types_overlap
 import pandas as pd
 
 #personal imports
@@ -24,8 +25,8 @@ COLUMNS = [
 
 #--------------------------------------
 
-MAKE_PLOT = 0 #0 -> non fare il grafico / 1 -> fai il grafico
-TO_PLOT = 'open'
+MAKE_PLOT = 1 #0 -> non fare il grafico / 1 -> fai il grafico
+TO_PLOT = 'close'
 STATUS = 'online'
 
 #--------------------------------------
@@ -40,18 +41,31 @@ ORDER_TYPE = 'market'
 
 #constructor of the database
 
+try:
     
-db = dbc.db_constructor(SYMBOL, INTERVAL, LIMIT, DEFAULT_TIME)
+    repeat = True
+    while repeat:
+
+        db, repeat = dbc.db_from_csv(SYMBOL, INTERVAL, LIMIT)
+        print('da csv:\n')
+
+except:
+
+    db = dbc.db_constructor(SYMBOL, INTERVAL, LIMIT, DEFAULT_TIME)
+    print('da API\n')
+
+    if len(db) == 1000:
+        
+        repeat = True
+        while repeat:
+
+            db, repeat = dbc.db_from_csv(SYMBOL, INTERVAL, LIMIT)
+            print('da csv\n')
 
 db['hhv20'] = st.hhv20(db['high'])
 db['llv20'] = st.llv20(db['low'])
 db['hhv5'] = st.hhv5(db['high'])
 db['llv5'] = st.llv5(db['low'])
-
-#decide wether to make a plot or not
-if MAKE_PLOT == 1:
-
-    gt.mkplot(db[TO_PLOT])
 
 #builds enter and exit rules, depending on DIRECTION
 if DIRECTION == 'long':
@@ -67,3 +81,7 @@ else:
 #backtest
 trading_system = st.apply_trading_system(db, INSTRUMENT, COSTS, DIRECTION, ORDER_TYPE, OPERATION_MONEY, enter_rules, exit_rules)
 
+#decide wether to make a plot or not
+if MAKE_PLOT == 1:
+
+    gt.mkplot(db[TO_PLOT])
