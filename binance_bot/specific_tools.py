@@ -122,5 +122,52 @@ def apply_trading_system(dataframe, instrument, costs, direction, order_type, op
 
     return dataframe
 
-#-------------------------------------------------------
+#ANALISYS TOOLS-------------------------------------------------------
 
+def plot_equity(equity, color):
+    """
+    plots the equity line
+    """
+    import matplotlib.pyplot as plt
+
+    plt.figure(figsize = (4,18), dpi = 300)
+    plt.plot(equity, color)
+    plt.xlabel('Time')
+    plt.ylabel('Profit/Loss')
+    plt.title('Equity line')
+    plt.xticks(rotation = 'vertical')
+    plt.grid(True)
+    plt.show()
+
+    return
+
+def drawdown(equity):
+    """
+    calculates the drawdown
+    """
+
+    import pandas as pd
+
+    maxvalue = equity.expanding(0).max()
+    drawdown = equity - maxvalue
+    drawdown_series = pd.Series(drawdown, index = equity.index)
+    
+    return drawdown_series
+
+def plot_drawdown(equity):
+    """
+    plots the drawdown
+    """
+
+    import matplotlib.pyplot as plt
+
+    dd = drawdown(equity)
+    plt.plot(dd)
+    plt.fill_between(dd.index, 0, dd)
+    plt.xlabel('Time')
+    plt.ylabel('Profit/Loss')
+    plt.title('Drawdown')
+    plt.grid(True)
+    plt.show()
+
+    return

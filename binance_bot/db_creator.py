@@ -1,7 +1,7 @@
 def set_type(db):
 
     """
-    trasforma tutti gli elementi del DataFrame in float, ad eccezine delle timestamps
+    trasforma tutti gli elementi del DataFrame in float, ad eccezione delle timestamps
     """
 
     import pandas as pd
@@ -26,8 +26,6 @@ def db_constructor(symbol, interval, limit, timestamp):
     from binance.spot import Spot as Client
     import numpy as np
     import pandas as pd
-    import matplotlib.pyplot as plt
-    import seaborn as sns
 
     #personal modules
     import generic_tools as gt
@@ -88,21 +86,33 @@ def db_constructor(symbol, interval, limit, timestamp):
 
 #------------------------------------------------------------------
 
-def db_from_csv(symbol, interval, limit):
+def db_from_csv(symbol, interval, limit, status = 'online'):
 
     import pandas as pd
 
     db1 = pd.read_csv(f'{interval}klines-{symbol}.csv', index_col = 'time')
     timestamp = int(db1.timestamp.iloc[-1] + 900000)
-    db2 = db_constructor(symbol, interval, limit, timestamp)
-    
-    if len(db2) != 1000:
-        repeat = False
+
+    if status == 'online':
+
+        db2 = db_constructor(symbol, interval, limit, timestamp)
+        
+        if len(db2) != 1000:
+            repeat = False
+        
+        else:
+            repeat = True
+        
+        db = pd.concat([db1, db2])
+        db.to_csv(f'{interval}klines-{symbol}.csv')
+        print('succesfully updated the database')
+
+        return db, repeat
     
     else:
-        repeat = True
-    
-    db = pd.concat([db1, db2])
-    db.to_csv(f'{interval}klines-{symbol}.csv')
-    
-    return db, repeat
+
+        repeat = False
+        print("failed to retrieve new data, the database won't be updated")
+        print(f'please check your connection or modify your settings. STATUS: {status}')
+        
+        return db1, repeat

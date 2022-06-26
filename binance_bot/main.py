@@ -1,6 +1,7 @@
 #third-party imports
-from graphql import do_types_overlap
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 #personal imports
 import db_creator as dbc
@@ -10,7 +11,7 @@ import specific_tools as st
 #SETTINGS------------------------------
 
 SYMBOL = 'BTCUSDT'
-INTERVAL = '15m'
+INTERVAL = '1m'
 LIMIT = '1000'
 DEFAULT_TIME = '1654819200000'
 PARAMETER = 'open'
@@ -24,11 +25,7 @@ COLUMNS = [
     ]
 
 #--------------------------------------
-
-MAKE_PLOT = 1 #0 -> non fare il grafico / 1 -> fai il grafico
-TO_PLOT = 'close'
-STATUS = 'online'
-
+status = 'offline'
 #--------------------------------------
 
 COSTS = 0
@@ -41,18 +38,31 @@ ORDER_TYPE = 'market'
 
 #constructor of the database
 
+#checks wether the csv spreadsheet exists or not
 try:
     
-    repeat = True
-    while repeat:
+    open(f'{INTERVAL}klines-{SYMBOL}.csv')
+    file_status = 'file already exists'
 
-        db, repeat = dbc.db_from_csv(SYMBOL, INTERVAL, LIMIT)
-        print('da csv:\n')
 
 except:
 
+    file_status = 'file do exist'
+
+#if the spreadsheed exists, reads the file from the csv
+if file_status == 'file already exists':
+
+    print('retrieving data from an existing database...\n')
+
+    repeat = True
+    while repeat:
+
+        db, repeat = dbc.db_from_csv(SYMBOL, INTERVAL, LIMIT, status)
+
+#if the spreadsheet does not exist but internet connection is available, creates it through API
+elif status == 'online':
     db = dbc.db_constructor(SYMBOL, INTERVAL, LIMIT, DEFAULT_TIME)
-    print('da API\n')
+    print('retrieving new data from the API...\n')
 
     if len(db) == 1000:
         
@@ -60,7 +70,15 @@ except:
         while repeat:
 
             db, repeat = dbc.db_from_csv(SYMBOL, INTERVAL, LIMIT)
-            print('da csv\n')
+            print('seems like lots of data uh?\n')
+    
+    print('database succesfully created')
+
+else:
+    print('could not reade nor create a database.')
+    print(f'STATUS: {status}')
+
+
 
 db['hhv20'] = st.hhv20(db['high'])
 db['llv20'] = st.llv20(db['low'])
@@ -80,8 +98,3 @@ else:
 
 #backtest
 trading_system = st.apply_trading_system(db, INSTRUMENT, COSTS, DIRECTION, ORDER_TYPE, OPERATION_MONEY, enter_rules, exit_rules)
-
-#decide wether to make a plot or not
-if MAKE_PLOT == 1:
-
-    gt.mkplot(db[TO_PLOT])
