@@ -3,3 +3,4 @@
 0000000900000 -> delta = 15 min in ms?
 
 
+il problema si presenta se il csv esiste già

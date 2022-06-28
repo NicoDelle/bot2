@@ -74,12 +74,12 @@ def db_constructor(symbol, interval, limit, timestamp):
         'Taker buy quote asset volume',
         'ignore'
         ]
-
     db.drop(labels = labels, axis = 1, inplace = True)
 
-    #sets all datas to floats and sets new index
+    #sets all datatypes to floats and sets new index
     df = set_type(db)
 
+    #saves the dataframe into a csv file
     df.to_csv(f'{interval}klines-{symbol}.csv')
 
     return(df)
@@ -87,12 +87,17 @@ def db_constructor(symbol, interval, limit, timestamp):
 #------------------------------------------------------------------
 
 def db_from_csv(symbol, interval, limit, status = 'online'):
+    """
+    creates the database from an existing csv file, and tries to update it
+    """
 
     import pandas as pd
-
+    
+    #reads the csv
     db1 = pd.read_csv(f'{interval}klines-{symbol}.csv', index_col = 'time')
     timestamp = int(db1.timestamp.iloc[-1] + 900000)
 
+    #if an internet connection is available, updates the csv
     if status == 'online':
 
         db2 = db_constructor(symbol, interval, limit, timestamp)

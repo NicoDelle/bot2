@@ -1,4 +1,5 @@
 #third-party imports
+from turtle import position
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -25,12 +26,12 @@ COLUMNS = [
     ]
 
 #--------------------------------------
-status = 'offline'
+status = 'online'
 #--------------------------------------
 
 COSTS = 0
 INSTRUMENT = 1 #1 -> equity/forex, 2 -> future
-OPERATION_MONEY = 10000
+OPERATION_MONEY = 1000
 DIRECTION = 'short'
 ORDER_TYPE = 'market'
 
@@ -41,7 +42,7 @@ ORDER_TYPE = 'market'
 #checks wether the csv spreadsheet exists or not
 try:
     
-    open(f'{INTERVAL}klines-{SYMBOL}.csv')
+    open(f'{INTERVAL}klines-{SYMBOL}\{DIRECTION}.csv')
     file_status = 'file already exists'
 
 
