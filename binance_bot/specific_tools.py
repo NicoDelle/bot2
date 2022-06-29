@@ -40,6 +40,76 @@ def crossunder(array1, array2):
     """
     return (array1 < array2) & (array1.shift(1) > array2.shift(1))
 
+def stop_check(data, rules, level, direction):
+    """
+    validates the rules with a stop setup
+    """
+
+    import pandas as pd
+    import numpy as np
+
+    df = pd.DataFrame(index = data.index)
+    df['rules'] = rules
+    df['level'] = level
+    df['low'] = data.low
+    df['high'] = data.high
+
+    if direction == 'long':
+        df['new_rules'] = np.where((df.rules == True) & (df.high.shift(-1) >= df.level.shift(-1)), True, False)
+    
+    if direction == 'short':
+        df['new rules'] = np.where((df.rules == True) & (df.low.shift(-1) <= df.level.shift(-1)), True, False)
+    
+    return df.new_rules
+
+def limt_check(data, rules, level, direction):
+    """
+    validates a limit setup with rules
+    """
+
+    import pandas as pd
+    import numpy as np
+
+    df = pd.DataFrame()
+    df['rules'] = rules
+    df['level'] = level
+    df['low'] = data.low
+    df['high'] = data.high
+
+    if direction == 'long':
+        df['new_rules'] = np.where((df.rules == True) & (df.low.shift(-1) <= df.level.shift(-1)), True, False)
+    
+    if direction == 'short':
+        df['new_rules'] = np.where((df.rules == True) & (df.high.shift(-1) >= df.level.shift(-1)))
+
+    return df.new_rules
+
+def tick_correction_up(level, tick):
+    """
+    corrects the price upward
+    """
+
+    import math
+
+    if level != level:
+        level = 0
+    multiplier = math.ceil(level/tick)
+
+    return multiplier * tick
+
+def tick_correction_up(level, tick):
+    """
+    corrects the price downward
+    """
+
+    import math
+
+    if level != level:
+        level = 0
+    multiplier = math.floor(level/tick)
+    
+    return multiplier * tick
+
 #-------------------------------------------------------
 
 def marketposition_generator(enter_rules, exit_rules):
@@ -114,17 +184,15 @@ def apply_trading_system(dataframe, instrument, costs, direction, order_type, op
             dataframe['open_operations'] = np.where((dataframe.mp == 1) & (dataframe.mp.shift(-1) == 0), ((dataframe.entry_price - dataframe.open.shift(-1)) * dataframe.number_of_stocks) - abs(((dataframe.entry_price - dataframe.open.shift(-1)) * dataframe.number_of_stocks) * .1), dataframe.open_operations)
 
     dataframe['open_operations'] = np.where(dataframe.mp == 1, dataframe.open_operations, 0)
-    dataframe['events_out'] = np.where((dataframe.mp == 0) & (dataframe.exit_rules == -1), 'exit', '')
-    dataframe['operations'] = np.where((dataframe.exit_rules == -1) & (dataframe.mp == 1), dataframe.open_operations, np.nan)
-    dataframe['closed_equity'] = dataframe.operations.fillna(0).cumsum()
-    dataframe['open_equity'] = dataframe.closed_equity + dataframe.open_operations - dataframe.operations.fillna(0)
+    dataframe['events_out'] = np.where((dataframe.mp == 1) & (dataframe.exit_rules == -1), 'exit', '')
+    dataframe['operations'] = np.where((dataframe.exit_rules == -1) & (dataframe.mp == 1), round(dataframe.open_operations, 2), np.nan)
+    dataframe['closed_equity'] = round(dataframe.operations.fillna(0).cumsum(), 3)
+    dataframe['open_equity'] = round(dataframe.closed_equity + dataframe.open_operations - dataframe.operations.fillna(0), 3)
 
     dataframe.to_csv('trading_system.csv')
 
     return dataframe
-    #premesso che è inutile ai fini della simulazione aggiungere tutto il profitto al budget, so potrebbe fare:
-    #eliminando operations_money e basando l'acquisto delle azioni sull'equity, inizializzata al valore di budgett
-    #dopo un operazione, si aggiunge o sottrae il suo valore all'equity. 
+    
 
 #ANALISYS TOOLS-------------------------------------------------------
 

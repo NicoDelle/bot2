@@ -95,7 +95,7 @@ def db_from_csv(symbol, interval, limit, status = 'online'):
     
     #reads the csv
     db1 = pd.read_csv(f'{interval}klines-{symbol}.csv', index_col = 'time')
-    timestamp = int(db1.timestamp.iloc[-1] + 900000)
+    timestamp = int(db1.timestamp.iloc[-1] + (db1.timestamp.iloc[-1] - db1.timestamp.iloc[-2]))
 
     #if an internet connection is available, updates the csv
     if status == 'online':

@@ -42,8 +42,9 @@ ORDER_TYPE = 'market'
 #checks wether the csv spreadsheet exists or not
 try:
     
-    open(f'{INTERVAL}klines-{SYMBOL}\{DIRECTION}.csv')
+    csv = open(f'{INTERVAL}klines-{SYMBOL}.csv')
     file_status = 'file already exists'
+    csv.close()
 
 
 except:
