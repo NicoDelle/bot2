@@ -11,9 +11,15 @@ import specific_tools as st
 
 #SETTINGS------------------------------
 
+status = 'online'
+ORDER_TYPE = 'market'
+DIRECTION = 'long'
 SYMBOL = 'BTCUSDT'
 INTERVAL = '1m'
 LIMIT = '1000'
+INSTRUMENT = 1 #1 -> equity/forex, 2 -> future
+OPERATION_MONEY = 1000
+TICK = 0.01
 DEFAULT_TIME = '1654819200000'
 PARAMETER = 'open'
 COLUMNS = [
@@ -24,21 +30,9 @@ COLUMNS = [
     'volume',
     'trades'
     ]
-
-#--------------------------------------
-status = 'online'
-#--------------------------------------
-
-COSTS = 0
-INSTRUMENT = 1 #1 -> equity/forex, 2 -> future
-OPERATION_MONEY = 1000
-DIRECTION = 'short'
-ORDER_TYPE = 'market'
-
-#--------------------------------------
+#------------------------------------------------
 
 #constructor of the database
-
 #checks wether the csv spreadsheet exists or not
 try:
     
@@ -49,7 +43,7 @@ try:
 
 except:
 
-    file_status = 'file do exist'
+    file_status = 'file does not exist'
 
 #if the spreadsheed exists, reads the file from the csv
 if file_status == 'file already exists':
@@ -87,16 +81,44 @@ db['llv20'] = st.llv20(db['low'])
 db['hhv5'] = st.hhv5(db['high'])
 db['llv5'] = st.llv5(db['low'])
 
-#builds enter and exit rules, depending on DIRECTION
-if DIRECTION == 'long':
+
+if ORDER_TYPE == 'stop':
+
+    #builds enter and exit rules, depending on DIRECTION
+    if DIRECTION == 'long':
+        
+        enter_rules = db.close > 0
+        enter_level = db.hhv20.shift(1)
+        exit_rules = st.crossunder(db.close, db.llv5.shift(1))  
+
+    else:
+
+        enter_rules = db.close > 0
+        enter_level = db.llv20.shift(1)
+        exit_rules = st.crossover(db.close, db.hhv5.shift(1))
     
-    enter_rules = st.crossover(db.close, db.hhv20.shift(1))
-    exit_rules = st.crossunder(db.close, db.llv5.shift(1))  
+    #args
+    system_args = [
+        enter_level
+        ]
 
-else:
+if ORDER_TYPE == 'market':
+    
+    #builds enter and exit rules, depending on DIRECTION
+    if DIRECTION == 'long':
+    
+        enter_rules = st.crossover(db.close, db.hhv20.shift(1))
+        exit_rules = st.crossunder(db.close, db.llv5.shift(1))  
 
-    enter_rules = st.crossunder(db.close, db.llv20.shift(1))
-    exit_rules = st.crossover(db.close, db.hhv5.shift(1))
+    else:
+
+        enter_rules = st.crossunder(db.close, db.llv20.shift(1))
+        exit_rules = st.crossover(db.close, db.hhv5.shift(1))
+
+    #args
+    system_args = [
+        ]
+
 
 #backtest
-trading_system = st.apply_trading_system(db, INSTRUMENT, COSTS, DIRECTION, ORDER_TYPE, OPERATION_MONEY, enter_rules, exit_rules)
+trading_system = st.apply_trading_system(db, INSTRUMENT, DIRECTION, ORDER_TYPE, OPERATION_MONEY, enter_rules, exit_rules, TICK, *system_args)

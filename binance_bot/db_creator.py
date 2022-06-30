@@ -43,8 +43,13 @@ def db_constructor(symbol, interval, limit, timestamp):
     #----------------------------------------------
     client = Client(base_url='https://testnet.binance.vision')
 
-    #creates an array with all the infos
-    klines = np.array(client.klines(symbol = symbol, interval = interval, limit = limit, startTime = timestamp))
+    try:
+        #creates an array with all the infos
+        klines = np.array(client.klines(symbol = symbol, interval = interval, limit = limit, startTime = timestamp))
+        status = 'online'
+    
+    except:
+        status = 'offline'
 
     klines_columns = [
         'timestamp', 
@@ -61,28 +66,35 @@ def db_constructor(symbol, interval, limit, timestamp):
         'ignore'
         ]
 
-    db = pd.DataFrame(data = klines, columns = klines_columns)
+    if len(klines) != 0:
+        db = pd.DataFrame(data = klines, columns = klines_columns)
+        #from timestamps to date
+        db['time'] = gt.todate(db['timestamp'])
+        
+        #cleans the dataframe
+        labels = [
+            'close time',
+            'quote asset volume',
+            'Taker buy base asset volume',
+            'Taker buy quote asset volume',
+            'ignore'
+            ]
+        db.drop(labels = labels, axis = 1, inplace = True)
 
-    #from timestamps to date
-    db['time'] = gt.todate(db['timestamp'])
-  
-    #cleans the dataframe
-    labels = [
-        'close time',
-        'quote asset volume',
-        'Taker buy base asset volume',
-        'Taker buy quote asset volume',
-        'ignore'
-        ]
-    db.drop(labels = labels, axis = 1, inplace = True)
+        #sets all datatypes to floats and sets new index
+        df = set_type(db)
 
-    #sets all datatypes to floats and sets new index
-    df = set_type(db)
+        #saves the dataframe into a csv file
+        df.to_csv(f'{interval}klines-{symbol}.csv')
 
-    #saves the dataframe into a csv file
-    df.to_csv(f'{interval}klines-{symbol}.csv')
 
-    return(df)
+        return(df)
+
+    elif status == 'offline':
+        return status
+
+    else:
+        return 'updated'
 
 #------------------------------------------------------------------
 
@@ -102,22 +114,38 @@ def db_from_csv(symbol, interval, limit, status = 'online'):
 
         db2 = db_constructor(symbol, interval, limit, timestamp)
         
-        if len(db2) != 1000:
-            repeat = False
-        
-        else:
-            repeat = True
-        
-        db = pd.concat([db1, db2])
-        db.to_csv(f'{interval}klines-{symbol}.csv')
-        print('succesfully updated the database')
+        if type(db2) != type('str'):
 
-        return db, repeat
-    
+            if not db2.empty:
+                if len(db2) != 1000:
+                    repeat = False
+                
+                else:
+                    repeat = True
+                
+                db = pd.concat([db1, db2])
+                db.to_csv(f'{interval}klines-{symbol}.csv')
+                print('succesfully updated the database')
+
+                return db, repeat
+
+            else:
+                repeat = False
+                print('database was up-to-date')
+
+                return set_type(db1), repeat 
+
+        elif db2 == 'offline':
+
+            repeat = False
+            print("failed to retrieve new data, the database won't be updated")
+            print('please check your connection or modify your settings. STATUS: offline')
+                
+            return set_type(db1), repeat
+
     else:
 
         repeat = False
-        print("failed to retrieve new data, the database won't be updated")
-        print(f'please check your connection or modify your settings. STATUS: {status}')
+        print('Connection lost: data will not be updated')
+        return set_type(db1), repeat
         
-        return db1, repeat

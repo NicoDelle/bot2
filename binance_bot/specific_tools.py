@@ -58,11 +58,11 @@ def stop_check(data, rules, level, direction):
         df['new_rules'] = np.where((df.rules == True) & (df.high.shift(-1) >= df.level.shift(-1)), True, False)
     
     if direction == 'short':
-        df['new rules'] = np.where((df.rules == True) & (df.low.shift(-1) <= df.level.shift(-1)), True, False)
+        df['new_rules'] = np.where((df.rules == True) & (df.low.shift(-1) <= df.level.shift(-1)), True, False)
     
     return df.new_rules
 
-def limt_check(data, rules, level, direction):
+def limit_check(data, rules, level, direction):
     """
     validates a limit setup with rules
     """
@@ -97,7 +97,7 @@ def tick_correction_up(level, tick):
 
     return multiplier * tick
 
-def tick_correction_up(level, tick):
+def tick_correction_down(level, tick):
     """
     corrects the price downward
     """
@@ -142,7 +142,7 @@ def marketposition_generator(enter_rules, exit_rules):
 
 #-----------------------------------------------
 
-def apply_trading_system(dataframe, instrument, costs, direction, order_type, operation_money, enter_rules, exit_rules):
+def apply_trading_system(dataframe, instrument, direction, order_type, operation_money, enter_rules, exit_rules, tick, *args):
     
     """
     core of the trading system
@@ -151,6 +151,16 @@ def apply_trading_system(dataframe, instrument, costs, direction, order_type, op
     import numpy as np
 
     dataframe = dataframe.copy()
+
+    if order_type == 'stop':
+        enter_level = args[0]
+        enter_rules = stop_check(dataframe, enter_rules, enter_level, direction)
+        dataframe['enter_level'] = enter_level
+
+    if order_type == 'limit':
+        enter_level = args[0]
+        enter_rules == limit_check(dataframe, enter_rules, enter_level, direction)
+        dataframe['enter_level'] = enter_level
 
     dataframe['enter_rules'] = enter_rules.apply(lambda x: 1 if x == True else 0)
     dataframe['exit_rules'] = exit_rules.apply(lambda x: -1 if x == True else 0)
@@ -161,8 +171,39 @@ def apply_trading_system(dataframe, instrument, costs, direction, order_type, op
         dataframe['entry_price'] = np.where((dataframe.mp.shift(1) == 0) & (dataframe.mp == 1), dataframe.open, np.nan)
     
     #marks the number of stocks
-    if instrument == 1:
-        dataframe['number_of_stocks'] = np.where((dataframe.mp.shift(1) == 0) & (dataframe.mp == 1), operation_money / dataframe.entry_price, np.nan)
+        if instrument == 1:
+            dataframe['number_of_stocks'] = np.where((dataframe.mp.shift(1) == 0) & (dataframe.mp == 1), operation_money / dataframe.entry_price, np.nan)
+    
+    if order_type == 'stop':
+        
+        #corrects the price end checks wether the stop conditions are respected or not
+        if direction == 'long':
+            dataframe.enter_level = dataframe.enter_level.apply(lambda x: tick_correction_up(x, tick))
+            real_entry = np.where(dataframe.open > dataframe.enter_level, dataframe.open, dataframe.enter_level)
+            dataframe['entry_price'] = np.where((dataframe.mp.shift(1) == 0) & (dataframe.mp == 1), real_entry, np.nan)
+
+        if direction == 'short':
+            dataframe.enter_level = dataframe.enter_level.apply(lambda x: tick_correction_down(x, tick))
+            real_entry = np.where(dataframe.open < dataframe.enter_level, dataframe.open, dataframe.enter_level)
+            dataframe['entry_price'] = np.where((dataframe.mp.shift(1) == 0) & (dataframe.mp == 1), real_entry, np.nan)
+
+        if instrument == 1:
+            dataframe['number_of_stocks'] = np.where((dataframe.mp.shift(1) == 0) & (dataframe.mp == 1) & (real_entry), operation_money / real_entry, np.nan)
+    
+    if order_type == 'limit':
+        
+        if direction == 'long':
+            dataframe.enter_level = dataframe.enter_level.apply(lambda x: tick_correction_up(x, tick))
+            real_entry = np.where(dataframe.open < dataframe.enter_level, dataframe.open, dataframe.enter_level)
+            dataframe['entry_price'] = np.where((dataframe.mp.shift(1) == 0) & (dataframe.mp == 1), real_entry, np.nan)
+
+        if direction == 'short':
+            dataframe.enter_level = dataframe.enter_level.apply(lambda x: tick_correction_up(x, tick))
+            real_entry = np.where(dataframe.open > dataframe.enter_level, dataframe.open, dataframe.enter_level)
+            dataframe['entry_price'] = np.where((dataframe.mp.shift(1) == 0) & (dataframe.mp == 1) & (real_entry != 0), real_entry, np.nan)
+
+        if instrument == 1:
+            dataframe['number_of_stocks'] = np.where((dataframe.mp.shift(1) == 0) & (dataframe.mp == 1), operation_money / real_entry, np.nan)
     
     #extends the new columns where necessary
     dataframe['entry_price'] = dataframe['entry_price'].fillna(method = 'ffill')
