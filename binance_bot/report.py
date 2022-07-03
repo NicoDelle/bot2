@@ -7,7 +7,7 @@ import datetime
 
 #personal imports
 import specific_tools as st
-from main import EMA_PERIOD
+from main import EMA_LONG_PERIOD, EMA_SHORT_PERIOD
 
 df = pd.read_csv('trading_system.csv', index_col = 'timestamp')
 
@@ -59,5 +59,5 @@ print(f'Reward/risk ratio: {RR_ratio}')
 print(f'Max delay between peaks: {max_delay}')
 print(f'Average delay between peaks: {avg_delay}')
 
-lines = [df.close, df[f'EMA{EMA_PERIOD}']]
+lines = [df.close, df[f'EMA{EMA_LONG_PERIOD}'], df[f'EMA{EMA_SHORT_PERIOD}']]
 st.plot_multiple(*lines)

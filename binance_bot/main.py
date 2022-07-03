@@ -1,5 +1,6 @@
 #third-party imports
 from turtle import position
+from numpy import float64
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -13,14 +14,16 @@ import specific_tools as st
 
 status = 'online'
 ORDER_TYPE = 'market'
-DIRECTION = 'short'
+direction = 'short'
+TREND_FOLLOWING = 'on'
 SYMBOL = 'BTCUSDT'
-INTERVAL = '15m'
+INTERVAL = '1m'
 LIMIT = '1000'
 INSTRUMENT = 1 #1 -> equity/forex, 2 -> future
 OPERATION_MONEY = 1000
 TICK = 0.01
-EMA_PERIOD = 200
+EMA_LONG_PERIOD = 200
+EMA_SHORT_PERIOD = 60
 DEFAULT_TIME = '1654819200000'
 PARAMETER = 'open'
 COLUMNS = [
@@ -81,13 +84,14 @@ db['hhv20'] = st.hhv20(db['high'])
 db['llv20'] = st.llv20(db['low'])
 db['hhv5'] = st.hhv5(db['high'])
 db['llv5'] = st.llv5(db['low'])
-db[f'EMA{EMA_PERIOD}'] = st.ema(db['close'], EMA_PERIOD)
+db[f'EMA{EMA_LONG_PERIOD}'] = st.ema(db['close'], EMA_LONG_PERIOD)
+db[f'EMA{EMA_SHORT_PERIOD}'] = st.ema(db['close'], EMA_SHORT_PERIOD)
 
 
 if ORDER_TYPE == 'stop':
 
     #builds enter and exit rules, depending on DIRECTION
-    if DIRECTION == 'long':
+    if direction == 'long':
         
         enter_rules = db.close > 0
         enter_level = db.hhv20.shift(1)
@@ -105,17 +109,51 @@ if ORDER_TYPE == 'stop':
         ]
 
 if ORDER_TYPE == 'market':
-    
-    #builds enter and exit rules, depending on DIRECTION
-    if DIRECTION == 'long':
-    
-        enter_rules = st.crossover(db.close, db.hhv20.shift(1))
-        exit_rules = st.crossunder(db.close, db.llv5.shift(1))  
+
+    if TREND_FOLLOWING == 'on':
+        
+        enter_rules = []
+        exit_rules = []
+
+        db['trend'] = st.long_or_short(db[f'EMA{EMA_SHORT_PERIOD}'], db[f'EMA{EMA_LONG_PERIOD}'], direction, EMA_LONG_PERIOD)
+        groups = db.groupby(db.trend).groups
+        db.reset_index(drop = False, inplace = True)
+
+        temporary_index = [0]
+        for n in db.index.delete(0):
+            
+            if db.trend.iloc[n] == db.trend.iloc[n - 1]:
+
+                temporary_index.append(n)
+            
+            else:
+
+                if db.trend.iloc[n - 1] == 1:
+
+                    enter_rules.append(st.crossover(db.close.iloc[temporary_index[0]:temporary_index[-1]], db.hhv20.iloc[temporary_index[0]:temporary_index[-1]].shift(1)))
+                    exit_rules.append(st.crossunder(db.close.iloc[temporary_index[0]:temporary_index[-1]], db.llv5.iloc[temporary_index[0]:temporary_index[-1]].shift(1)))
+
+                else:
+                    enter_rules.append(st.crossunder(db.close.iloc[temporary_index[0]:temporary_index[-1]], db.llv20.iloc[temporary_index[0]:temporary_index[-1]].shift(1)))
+                    exit_rules.append(st.crossover(db.close.iloc[temporary_index[0]:temporary_index[-1]], db.hhv5.iloc[temporary_index[0]:temporary_index[-1]].shift(1)))
+                
+                temporary_index = [n]
+                
+    #reset the index with dates
+    #end trades during switch (if u ain't done that yet)
 
     else:
+    
+        #builds enter and exit rules, depending on DIRECTION
+        if direction == 'long':
+        
+            enter_rules = st.crossover(db.close, db.hhv20.shift(1))
+            exit_rules = st.crossunder(db.close, db.llv5.shift(1))  
 
-        enter_rules = st.crossunder(db.close, db.llv20.shift(1))
-        exit_rules = st.crossover(db.close, db.hhv5.shift(1))
+        else:
+
+            enter_rules = st.crossunder(db.close, db.llv20.shift(1))
+            exit_rules = st.crossover(db.close, db.hhv5.shift(1))
 
     #args
     system_args = [
@@ -123,4 +161,4 @@ if ORDER_TYPE == 'market':
 
 
 #backtest
-trading_system = st.apply_trading_system(db, INSTRUMENT, DIRECTION, ORDER_TYPE, OPERATION_MONEY, enter_rules, exit_rules, TICK, *system_args)
+trading_system = st.apply_trading_system(db, INSTRUMENT, direction, ORDER_TYPE, OPERATION_MONEY, enter_rules, exit_rules, TICK, *system_args)

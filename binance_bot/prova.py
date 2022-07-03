@@ -4,7 +4,9 @@ import specific_tools as st
 ema_period = 200
 
 db = pd.read_csv('1mklines-BTCUSDT.csv', index_col = 'time')
-ema = st.ema(db['close'], ema_period)
-db[f'EMA{ema_period}'] = ema
+db['EMA200'] = st.ema(db['close'], 200)
+db['EMA60'] = st.ema(db['close'], 60)
+db['trend'] = st.long_or_short(db.EMA60, db.EMA200, 'short', 200)
 
-print(db[f'EMA{ema_period}'])
+groups = db.groupby(db.trend).groups
+
