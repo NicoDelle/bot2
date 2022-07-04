@@ -221,9 +221,10 @@ def apply_trading_system(dataframe, instrument, direction, order_type, operation
         enter_level = args[0]
         enter_rules == limit_check(dataframe, enter_rules, enter_level, direction)
         dataframe['enter_level'] = enter_level
+    
 
-    dataframe['enter_rules'] = np.array(enter_rules).apply(lambda x: 1 if x == True else 0)
-    dataframe['exit_rules'] = np.array(exit_rules).apply(lambda x: -1 if x == True else 0)
+    dataframe['enter_rules'] = enter_rules.apply(lambda x: 1 if x == True else 0)
+    dataframe['exit_rules'] = exit_rules.apply(lambda x: -1 if x == True else 0)
     dataframe['mp'] = marketposition_generator(dataframe.enter_rules, dataframe.exit_rules)
 
     #marks entry price
@@ -344,7 +345,7 @@ def plot_drawdown(equity):
 
     return
 
-def plot_multiple(*lines):
+def plot_multiple(title, *lines):
     """
     plots the two equity lines at the same time
     """
@@ -357,7 +358,7 @@ def plot_multiple(*lines):
         plt.plot(line)
 
     plt.xlabel('timestamp')
-    plt.title(f'multiple lines plot')
+    plt.title(title)
     plt.xticks(rotation = 'vertical')
     plt.grid(True)
     plt.show()

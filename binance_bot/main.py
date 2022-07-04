@@ -2,8 +2,6 @@
 from turtle import position
 from numpy import float64
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 
 #personal imports
 import db_creator as dbc
@@ -14,10 +12,10 @@ import specific_tools as st
 
 status = 'online'
 ORDER_TYPE = 'market'
-direction = 'short'
+direction = 'long'
 TREND_FOLLOWING = 'on'
 SYMBOL = 'BTCUSDT'
-INTERVAL = '1m'
+INTERVAL = '15m'
 LIMIT = '1000'
 INSTRUMENT = 1 #1 -> equity/forex, 2 -> future
 OPERATION_MONEY = 1000
@@ -112,35 +110,43 @@ if ORDER_TYPE == 'market':
 
     if TREND_FOLLOWING == 'on':
         
-        enter_rules = []
-        exit_rules = []
-
         db['trend'] = st.long_or_short(db[f'EMA{EMA_SHORT_PERIOD}'], db[f'EMA{EMA_LONG_PERIOD}'], direction, EMA_LONG_PERIOD)
         groups = db.groupby(db.trend).groups
         db.reset_index(drop = False, inplace = True)
+        enter_rules = 'empty'
 
         temporary_index = [0]
         for n in db.index.delete(0):
             
+            #decides wether the trend changed or not
             if db.trend.iloc[n] == db.trend.iloc[n - 1]:
 
                 temporary_index.append(n)
-            
+            #if the trend changed, it generates enter and exit rules for that portion of 
+            #the prices, and then combine them with the previous rules    
             else:
 
                 if db.trend.iloc[n - 1] == 1:
-
-                    enter_rules.append(st.crossover(db.close.iloc[temporary_index[0]:temporary_index[-1]], db.hhv20.iloc[temporary_index[0]:temporary_index[-1]].shift(1)))
-                    exit_rules.append(st.crossunder(db.close.iloc[temporary_index[0]:temporary_index[-1]], db.llv5.iloc[temporary_index[0]:temporary_index[-1]].shift(1)))
+                    prov_enter_rules = st.crossover(db.close.iloc[temporary_index[0]:temporary_index[-1]], db.hhv20.iloc[temporary_index[0]:temporary_index[-1]].shift(1))
+                    prov_exit_rules = st.crossunder(db.close.iloc[temporary_index[0]:temporary_index[-1]], db.llv5.iloc[temporary_index[0]:temporary_index[-1]].shift(1))
 
                 else:
-                    enter_rules.append(st.crossunder(db.close.iloc[temporary_index[0]:temporary_index[-1]], db.llv20.iloc[temporary_index[0]:temporary_index[-1]].shift(1)))
-                    exit_rules.append(st.crossover(db.close.iloc[temporary_index[0]:temporary_index[-1]], db.hhv5.iloc[temporary_index[0]:temporary_index[-1]].shift(1)))
+                    prov_enter_rules = st.crossunder(db.close.iloc[temporary_index[0]:temporary_index[-1]], db.llv20.iloc[temporary_index[0]:temporary_index[-1]].shift(1))
+                    prov_exit_rules = st.crossover(db.close.iloc[temporary_index[0]:temporary_index[-1]], db.hhv5.iloc[temporary_index[0]:temporary_index[-1]].shift(1))
+
+                #to make sure we have not any open operation while a trend is changing 
+                prov_enter_rules.iloc[-1] = False
+                prov_exit_rules.iloc[-1] = True    
+
+                if type(enter_rules) == type('str'):
+                    enter_rules = pd.Series(prov_enter_rules)
+                    exit_rules = pd.Series(prov_exit_rules)
                 
+                else:
+                    enter_rules = pd.concat([enter_rules, prov_enter_rules])
+                    exit_rules = pd.concat([exit_rules, prov_exit_rules])
+
                 temporary_index = [n]
-                
-    #reset the index with dates
-    #end trades during switch (if u ain't done that yet)
 
     else:
     
