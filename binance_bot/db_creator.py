@@ -16,6 +16,8 @@ def set_type(db):
         else:
             df[column] = db[column]
             df.set_index('time', inplace = True)
+        
+    df.index = db.index
 
     return(df)
 
@@ -133,7 +135,7 @@ def db_from_csv(symbol, interval, limit, status = 'online'):
 
             repeat = False
             print("failed to retrieve new data, the database won't be updated")
-            print('please check your connection or modify your settings. STATUS: offline')
+            print('please check your connection or modify your settings (it may be an input error). STATUS: offline')
                 
             return set_type(db1), repeat
 

@@ -3,13 +3,15 @@ specific tools for algorithmical trading
 """
 
 from logging import raiseExceptions
+from numpy import array
 
 from sqlalchemy import true
 
 
 def hhv20(prices):
     """
-    selects the max value in a timeframe of 20 periods
+    selects the max value in a timeframe of 20 periods    import pandas as pd
+
     """
     return(prices.rolling(20).max())
 
@@ -145,6 +147,32 @@ def tick_correction_down(level, tick):
     return multiplier * tick
 
 #-------------------------------------------------------
+def long_or_short(short_ema, long_ema, direction, long_period):
+    """
+    to analyse trends
+    """
+
+    import numpy as np
+    import pandas as pd
+
+    #1 if the actual trend is bullish, -1 if it's bearish
+    position = np.where(short_ema > long_ema, 1, -1)
+
+    if direction == 'long':
+        
+        position = pd.Series(position)
+        position[:long_period].apply(lambda x: 1)
+        position.index = long_ema.index
+        
+        return position
+    
+    else:
+        
+        position = pd.Series(position)
+        position[:long_period].apply(lambda x: -1)
+        position.index = long_ema.index
+
+        return position    
 
 def marketposition_generator(enter_rules, exit_rules):
     """
@@ -174,8 +202,6 @@ def marketposition_generator(enter_rules, exit_rules):
 
     return df['mp new']
 
-#-----------------------------------------------
-
 def apply_trading_system(dataframe, instrument, direction, order_type, operation_money, enter_rules, exit_rules, tick, *args):
     
     """
@@ -195,6 +221,7 @@ def apply_trading_system(dataframe, instrument, direction, order_type, operation
         enter_level = args[0]
         enter_rules == limit_check(dataframe, enter_rules, enter_level, direction)
         dataframe['enter_level'] = enter_level
+    
 
     dataframe['enter_rules'] = enter_rules.apply(lambda x: 1 if x == True else 0)
     dataframe['exit_rules'] = exit_rules.apply(lambda x: -1 if x == True else 0)
@@ -267,7 +294,6 @@ def apply_trading_system(dataframe, instrument, direction, order_type, operation
     dataframe.to_csv('trading_system.csv')
 
     return dataframe
-    
 
 #ANALISYS TOOLS-------------------------------------------------------
 
@@ -319,7 +345,7 @@ def plot_drawdown(equity):
 
     return
 
-def plot_multiple(*lines):
+def plot_multiple(title, *lines):
     """
     plots the two equity lines at the same time
     """
@@ -332,7 +358,7 @@ def plot_multiple(*lines):
         plt.plot(line)
 
     plt.xlabel('timestamp')
-    plt.title(f'multiple lines plot')
+    plt.title(title)
     plt.xticks(rotation = 'vertical')
     plt.grid(True)
     plt.show()

@@ -7,7 +7,7 @@ import datetime
 
 #personal imports
 import specific_tools as st
-from main import EMA_PERIOD
+from main import EMA_LONG_PERIOD, EMA_SHORT_PERIOD
 
 df = pd.read_csv('trading_system.csv', index_col = 'timestamp')
 
@@ -57,7 +57,41 @@ print(f'\nProfit Factor: {pf}')
 print(f'Percent win: {percent_win}%')
 print(f'Reward/risk ratio: {RR_ratio}')
 print(f'Max delay between peaks: {max_delay}')
-print(f'Average delay between peaks: {avg_delay}')
+print(f'Average delay between peaks: {avg_delay}\n')
 
-lines = [df.close, df[f'EMA{EMA_PERIOD}']]
-st.plot_multiple(*lines)
+response = input('Do you want to plot anything? [y/n] ')
+
+if response == 'y':
+    
+
+    instruction = input(
+        """
+        what do you want to plot?
+        - enter 1 to plot equity lines
+        - enter 2 to plot closes and EMAs
+        - enter 3 to plot the drawdown\n
+        enter choice: """
+        )
+
+    repeat = True
+    while repeat:
+        
+        if instruction == '1':
+            lines = [df.open_equity, df.closed_equity]
+            title = 'equity lines'
+            repeat = False
+            st.plot_multiple(title, *lines)
+
+        if instruction == '2':
+            lines = [df.close, df[f'EMA{EMA_LONG_PERIOD}'], df[f'EMA{EMA_SHORT_PERIOD}']]
+            title = 'closes with EMAs'
+            repeat = False
+            st.plot_multiple(title, *lines)
+
+        if instruction == '3':
+            repeat = False
+            st.plot_drawdown(df.closed_equity)
+        
+        else:
+            print('invalid instruction. Pleae, try again')
+
