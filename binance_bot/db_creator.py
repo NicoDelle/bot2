@@ -90,7 +90,6 @@ def db_from_Binance(symbol, interval, limit, timestamp):
         df = set_type(db)
 
         #saves the dataframe into a csv file
-        #df.to_csv(f'{interval}klines-{symbol}.csv')
 
 
         return(df)
@@ -156,3 +155,80 @@ def db_from_csv(symbol, interval, limit, status = 'online'):
         return set_type(db1), repeat
 
 #------------------------------------------------------------------
+
+def make_db(*parameters):
+    """
+    to assemble the final product
+    """
+
+    #defining variables
+    interval = parameters[0]
+    symbol = parameters[1]
+    limit = parameters[2]
+    status = parameters[3]
+    default_time = parameters[4]
+    ema_long_period = parameters[5]
+    ema_short_period = parameters[6]
+
+
+    #third-party imports
+    import pandas as pd
+    import specific_tools as st
+
+    #checks wether the csv file exists or not
+    try:
+    
+        csv = open(f'{interval}klines-{symbol}.csv')
+        file_status = 'file already exists'
+        csv.close()
+
+
+    except:
+
+        file_status = 'file does not exist'
+
+    #if the csv exists, reads data from there
+    if file_status == 'file already exists':
+
+        print('retrieving data from an existing database...\n')
+
+        repeat = True
+        while repeat:
+
+            db, repeat = db_from_csv(symbol, interval, limit, status)
+
+    #if the spreadsheet does not exist but internet connection is available, creates it through API
+    elif status == 'online':
+
+        db = db_from_Binance(symbol, interval, limit, default_time)
+        
+        db.to_csv(f'{interval}klines-{symbol}.csv')
+        print('retrieving new data from the API...\n')
+
+        if len(db) == 1000:
+            
+            repeat = True
+            while repeat:
+
+                db, repeat = db_from_csv(symbol, interval, limit)
+                print('seems like lots of data uh?\n')
+        
+        print('database succesfully created')
+        db.to_csv(f'{interval}klines-{symbol}.csv')
+
+    else:
+        #if any other try failed, returns an empty list as a sentinel value
+        print('could not reade nor create a database.')
+        print(f'STATUS: {status}')
+
+        return []
+
+
+    db['hhv20'] = st.hhv20(db['high'])
+    db['llv20'] = st.llv20(db['low'])
+    db['hhv5'] = st.hhv5(db['high'])
+    db['llv5'] = st.llv5(db['low'])
+    db[f'EMA{ema_long_period}'] = st.ema(db['close'], ema_long_period)
+    db[f'EMA{ema_short_period}'] = st.ema(db['close'], ema_short_period)
+
+    return db 

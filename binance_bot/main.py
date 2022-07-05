@@ -5,15 +5,15 @@ import pandas as pd
 
 #personal imports
 import db_creator as dbc
-import generic_tools as gt
 import specific_tools as st
+import orders
 
 #SETTINGS------------------------------
 
 status = 'online'
 ORDER_TYPE = 'market'
 direction = 'long'
-TREND_FOLLOWING = 'on'
+TREND_FOLLOWING = 'off'
 SYMBOL = 'BTCUSDT'
 INTERVAL = '1m'
 LIMIT = '1000'
@@ -33,75 +33,18 @@ COLUMNS = [
     'trades'
     ]
 #------------------------------------------------
+parameters = [
+    INTERVAL, SYMBOL, LIMIT, status, DEFAULT_TIME, 
+    EMA_LONG_PERIOD, EMA_SHORT_PERIOD
+]
 
 #constructor of the database
-#checks wether the csv spreadsheet exists or not
-try:
-    
-    csv = open(f'{INTERVAL}klines-{SYMBOL}.csv')
-    file_status = 'file already exists'
-    csv.close()
+db = dbc.make_db(*parameters)
 
-
-except:
-
-    file_status = 'file does not exist'
-
-#if the spreadsheed exists, reads the file from the csv
-if file_status == 'file already exists':
-
-    print('retrieving data from an existing database...\n')
-
-    repeat = True
-    while repeat:
-
-        db, repeat = dbc.db_from_csv(SYMBOL, INTERVAL, LIMIT, status)
-
-#if the spreadsheet does not exist but internet connection is available, creates it through API
-elif status == 'online':
-    db = dbc.db_from_Binance(SYMBOL, INTERVAL, LIMIT, DEFAULT_TIME)
-    db.to_csv(f'{INTERVAL}klines-{SYMBOL}.csv')
-    print('retrieving new data from the API...\n')
-
-    if len(db) == 1000:
-        
-        repeat = True
-        while repeat:
-
-            db, repeat = dbc.db_from_csv(SYMBOL, INTERVAL, LIMIT)
-            print('seems like lots of data uh?\n')
-    
-    print('database succesfully created')
-    db.to_csv(f'{INTERVAL}klines-{SYMBOL}.csv')
-
-else:
-    print('could not reade nor create a database.')
-    print(f'STATUS: {status}')
-
-
-
-db['hhv20'] = st.hhv20(db['high'])
-db['llv20'] = st.llv20(db['low'])
-db['hhv5'] = st.hhv5(db['high'])
-db['llv5'] = st.llv5(db['low'])
-db[f'EMA{EMA_LONG_PERIOD}'] = st.ema(db['close'], EMA_LONG_PERIOD)
-db[f'EMA{EMA_SHORT_PERIOD}'] = st.ema(db['close'], EMA_SHORT_PERIOD)
-
-
+#orders
 if ORDER_TYPE == 'stop':
 
-    #builds enter and exit rules, depending on DIRECTION
-    if direction == 'long':
-        
-        enter_rules = db.close > 0
-        enter_level = db.hhv20.shift(1)
-        exit_rules = st.crossunder(db.close, db.llv5.shift(1))  
-
-    else:
-
-        enter_rules = db.close > 0
-        enter_level = db.llv20.shift(1)
-        exit_rules = st.crossover(db.close, db.hhv5.shift(1))
+    enter_rules, exit_rules, enter_level = orders.stop_order(db, direction)
     
     #args
     system_args = [
@@ -112,56 +55,12 @@ if ORDER_TYPE == 'market':
 
     if TREND_FOLLOWING == 'on':
         
-        db['trend'] = st.long_or_short(db[f'EMA{EMA_SHORT_PERIOD}'], db[f'EMA{EMA_LONG_PERIOD}'], direction, EMA_LONG_PERIOD)
-        groups = db.groupby(db.trend).groups
-        db.reset_index(drop = True, inplace = True)
-        enter_rules = 'empty'
-
-        temporary_index = [0]
-        for n in db.index.delete(0):
-            
-            #decides wether the trend changed or not
-            if db.trend.iloc[n] == db.trend.iloc[n - 1]:
-
-                temporary_index.append(n)
-            #if the trend changed, it generates enter and exit rules for that portion of 
-            #the prices, and then combine them with the previous rules    
-            else:
-
-                if db.trend.iloc[n - 1] == 1:
-                    prov_enter_rules = st.crossover(db.close.iloc[temporary_index[0]:temporary_index[-1]], db.hhv20.iloc[temporary_index[0]:temporary_index[-1]].shift(1))
-                    prov_exit_rules = st.crossunder(db.close.iloc[temporary_index[0]:temporary_index[-1]], db.llv5.iloc[temporary_index[0]:temporary_index[-1]].shift(1))
-
-                else:
-                    prov_enter_rules = st.crossunder(db.close.iloc[temporary_index[0]:temporary_index[-1]], db.llv20.iloc[temporary_index[0]:temporary_index[-1]].shift(1))
-                    prov_exit_rules = st.crossover(db.close.iloc[temporary_index[0]:temporary_index[-1]], db.hhv5.iloc[temporary_index[0]:temporary_index[-1]].shift(1))
-
-                #to make sure we have not any open operation while a trend is changing 
-                prov_enter_rules.iloc[-1] = False
-                prov_exit_rules.iloc[-1] = True    
-
-                if type(enter_rules) == type('str'):
-                    enter_rules = pd.Series(prov_enter_rules)
-                    exit_rules = pd.Series(prov_exit_rules)
-                
-                else:
-                    enter_rules = pd.concat([enter_rules, prov_enter_rules])
-                    exit_rules = pd.concat([exit_rules, prov_exit_rules])
-
-                temporary_index = [n]
+        enter_rules, exit_rules = orders.trend_following_order(db, EMA_SHORT_PERIOD, 
+        EMA_LONG_PERIOD, direction)
 
     else:
     
-        #builds enter and exit rules, depending on DIRECTION
-        if direction == 'long':
-        
-            enter_rules = st.crossover(db.close, db.hhv20.shift(1))
-            exit_rules = st.crossunder(db.close, db.llv5.shift(1))  
-
-        else:
-
-            enter_rules = st.crossunder(db.close, db.llv20.shift(1))
-            exit_rules = st.crossover(db.close, db.hhv5.shift(1))
+       enter_rules, exit_rules = orders.market_order(db, direction)
 
     #args
     system_args = [
@@ -169,4 +68,7 @@ if ORDER_TYPE == 'market':
 
 
 #backtest
-trading_system = st.apply_trading_system(db, INSTRUMENT, direction, ORDER_TYPE, OPERATION_MONEY, enter_rules, exit_rules, TICK, *system_args)
+trading_system = st.apply_trading_system(
+    db, INSTRUMENT, direction, ORDER_TYPE, 
+    OPERATION_MONEY, enter_rules, exit_rules, TICK, 
+    *system_args)
