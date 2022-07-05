@@ -15,7 +15,7 @@ ORDER_TYPE = 'market'
 direction = 'long'
 TREND_FOLLOWING = 'on'
 SYMBOL = 'BTCUSDT'
-INTERVAL = '15m'
+INTERVAL = '1m'
 LIMIT = '1000'
 INSTRUMENT = 1 #1 -> equity/forex, 2 -> future
 OPERATION_MONEY = 1000
@@ -59,7 +59,8 @@ if file_status == 'file already exists':
 
 #if the spreadsheet does not exist but internet connection is available, creates it through API
 elif status == 'online':
-    db = dbc.db_constructor(SYMBOL, INTERVAL, LIMIT, DEFAULT_TIME)
+    db = dbc.db_from_Binance(SYMBOL, INTERVAL, LIMIT, DEFAULT_TIME)
+    db.to_csv(f'{INTERVAL}klines-{SYMBOL}.csv')
     print('retrieving new data from the API...\n')
 
     if len(db) == 1000:
@@ -71,6 +72,7 @@ elif status == 'online':
             print('seems like lots of data uh?\n')
     
     print('database succesfully created')
+    db.to_csv(f'{INTERVAL}klines-{SYMBOL}.csv')
 
 else:
     print('could not reade nor create a database.')
@@ -112,7 +114,7 @@ if ORDER_TYPE == 'market':
         
         db['trend'] = st.long_or_short(db[f'EMA{EMA_SHORT_PERIOD}'], db[f'EMA{EMA_LONG_PERIOD}'], direction, EMA_LONG_PERIOD)
         groups = db.groupby(db.trend).groups
-        db.reset_index(drop = False, inplace = True)
+        db.reset_index(drop = True, inplace = True)
         enter_rules = 'empty'
 
         temporary_index = [0]

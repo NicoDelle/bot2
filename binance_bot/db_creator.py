@@ -1,3 +1,8 @@
+"""
+tools to build a database
+"""
+
+
 def set_type(db):
 
     """
@@ -14,15 +19,13 @@ def set_type(db):
             df[column] = gt.tonumerical(db[column])
         
         else:
-            df[column] = db[column]
-            df.set_index('time', inplace = True)
+            df.set_index(db.time, inplace = True, drop = True)
         
-    df.index = db.index
-
     return(df)
 
+#------------------------------------------------------------------
 
-def db_constructor(symbol, interval, limit, timestamp):
+def db_from_Binance(symbol, interval, limit, timestamp):
 
     #third-party imports
     from binance.spot import Spot as Client
@@ -87,7 +90,7 @@ def db_constructor(symbol, interval, limit, timestamp):
         df = set_type(db)
 
         #saves the dataframe into a csv file
-        df.to_csv(f'{interval}klines-{symbol}.csv')
+        #df.to_csv(f'{interval}klines-{symbol}.csv')
 
 
         return(df)
@@ -114,7 +117,7 @@ def db_from_csv(symbol, interval, limit, status = 'online'):
     #if an internet connection is available, updates the csv
     if status == 'online':
 
-        db2 = db_constructor(symbol, interval, limit, timestamp)
+        db2 = db_from_Binance(symbol, interval, limit, timestamp)
         
         if type(db2) != type('str'):
 
@@ -151,3 +154,5 @@ def db_from_csv(symbol, interval, limit, status = 'online'):
         repeat = False
         print('Connection lost: data will not be updated')
         return set_type(db1), repeat
+
+#------------------------------------------------------------------
