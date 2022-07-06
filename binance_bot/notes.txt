@@ -1,18 +1,2 @@
-per cambiare posizione, è necessario generare i cambi prima ancora di calcolare le entrate.
-
-EMA = close * smoother + EMA.shift(1) * (1 - smoother)
-smoother = 2 / (period + 1)
-
-dove per period si intende la lunghezza del periodo osservato
-
-- per implementare:
-    potresti generare un array contenente informazioni sul trend del momento (bull or bear),
-    e generare un mp long negli intervalli bull e un mp short in intervalli bear
-- strategia:
-    usa un'EMA a 200 periodi: se le chiusure l'attraversano, c'è un cambio di trend
-
-
-debug:
-    - EMA[period:-1].shift(1) inizia a 200 e finisce a 29.995
-
-errore da risolvere alla riga 53 di specific tools
+1609459200000 nuova data
+1654819200000 vecchia data

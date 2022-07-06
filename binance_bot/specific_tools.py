@@ -60,7 +60,7 @@ def ema(prices, period):
     
     else:
 
-        raise ValueError(f'period was longer than data (length data: {len(prices)}')
+        raise ValueError(f'period was longer than data (length data: {len(prices)})')
 
 #-------------------------------------------------------
 

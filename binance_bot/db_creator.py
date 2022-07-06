@@ -15,11 +15,9 @@ def set_type(db):
     df = pd.DataFrame()
 
     for column in db.columns:
-        if column != 'time':
-            df[column] = gt.tonumerical(db[column])
         
-        else:
-            df.set_index(db.time, inplace = True, drop = True)
+        df[column] = gt.tonumerical(db[column])    
+        df.set_index(db.index, inplace = True, drop = True)
         
     return(df)
 
@@ -46,7 +44,7 @@ def db_from_Binance(symbol, interval, limit, timestamp):
         'trades'
         ]
     #----------------------------------------------
-    client = Client(base_url='https://testnet.binance.vision')
+    client = Client()
 
     try:
         #creates an array with all the infos
@@ -169,6 +167,7 @@ def make_db(*parameters):
     default_time = parameters[4]
     ema_long_period = parameters[5]
     ema_short_period = parameters[6]
+    trend_following = parameters[7]
 
 
     #third-party imports
@@ -202,7 +201,6 @@ def make_db(*parameters):
 
         db = db_from_Binance(symbol, interval, limit, default_time)
         
-        db.to_csv(f'{interval}klines-{symbol}.csv')
         print('retrieving new data from the API...\n')
 
         if len(db) == 1000:
@@ -228,7 +226,9 @@ def make_db(*parameters):
     db['llv20'] = st.llv20(db['low'])
     db['hhv5'] = st.hhv5(db['high'])
     db['llv5'] = st.llv5(db['low'])
-    db[f'EMA{ema_long_period}'] = st.ema(db['close'], ema_long_period)
-    db[f'EMA{ema_short_period}'] = st.ema(db['close'], ema_short_period)
+    
+    if trend_following == 'on':
+        db[f'EMA{ema_long_period}'] = st.ema(db['close'], ema_long_period)
+        db[f'EMA{ema_short_period}'] = st.ema(db['close'], ema_short_period)
 
     return db 

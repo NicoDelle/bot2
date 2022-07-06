@@ -14,15 +14,15 @@ status = 'online'
 ORDER_TYPE = 'market'
 direction = 'long'
 TREND_FOLLOWING = 'off'
-SYMBOL = 'BTCUSDT'
-INTERVAL = '1m'
+SYMBOL = 'BTCEUR'
+INTERVAL = '1d'
 LIMIT = '1000'
 INSTRUMENT = 1 #1 -> equity/forex, 2 -> future
 OPERATION_MONEY = 1000
 TICK = 0.01
-EMA_LONG_PERIOD = 200
-EMA_SHORT_PERIOD = 60
-DEFAULT_TIME = '1654819200000'
+EMA_LONG_PERIOD = 60
+EMA_SHORT_PERIOD = 20
+DEFAULT_TIME = '1609459200000'
 PARAMETER = 'open'
 COLUMNS = [
     'open',
@@ -35,7 +35,7 @@ COLUMNS = [
 #------------------------------------------------
 parameters = [
     INTERVAL, SYMBOL, LIMIT, status, DEFAULT_TIME, 
-    EMA_LONG_PERIOD, EMA_SHORT_PERIOD
+    EMA_LONG_PERIOD, EMA_SHORT_PERIOD, TREND_FOLLOWING
 ]
 
 #constructor of the database
