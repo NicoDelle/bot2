@@ -1,4 +1,6 @@
 #third-party imports
+import numpy as np
+import matplotlib.pyplot as plt
 
 #personal imports
 import specific_tools as st
@@ -7,11 +9,11 @@ class Report:
     """
     define report class
     """
-    def __init__(self, dataframe) -> None:
+    def __init__(self, dataframe, symbol, interval) -> None:
         """
         Report constructor:
-            - It takes a dataframe with a closed_equity, an open_equity and an operations 
-              column, filled with numerical values
+            - It takes as arguments a dataframe with a closed_equity, an open_equity and an operations 
+              column, filled with numerical values, the symbol we're trading and the interval
             - profit property: the final profit of the given trading system
             - operations property: a list of tuples with gain or loss as first element,
               and date as second element
@@ -45,6 +47,9 @@ class Report:
             n += 1
         
         self._avg_trade = round(dataframe.operations.dropna().mean(), 2)
+
+        self.symbol = symbol
+        self.interval = interval
 
         self.max_dd = round(st.drawdown(dataframe.open_equity).min(), 2)
         self.avg_dd = round(
@@ -107,10 +112,11 @@ class Report:
     
     def __repr__(self) -> str:
         return(f"""
-Report:
+Report {self.interval}-{self.symbol}:
+
     - Profit: {self.profit}€
     - Average trade: {self.avg_trade}€
-    - Max and average DRAWDON: {self.max_dd}€, {self.avg_dd}€
+    - Max and average DRAWDOWN: {self.max_dd}€, {self.avg_dd}€
     - Max, average and gross LOSS: {self.max_loss[0]}€ on {self.max_loss[1]}, {self.avg_loss}€, {self.gross_loss}€
     - Max, average and gross GAIN: {self.max_gain[0]}€ on {self.max_gain[1]}, {self.avg_gain}€, {self.gross_profit}€
     - Percent Win: {self.percent_win}%

@@ -10,6 +10,7 @@ import orders
 
 #SETTINGS------------------------------
 
+MODE = 'read csv'
 status = 'online'
 ORDER_TYPE = 'market'
 direction = 'short'
@@ -39,7 +40,17 @@ parameters = [
 ]
 
 #constructor of the database
-db = dbc.make_db(*parameters)
+if MODE == 'update':
+    db = dbc.make_db(*parameters)
+else:
+
+    db = pd.read_csv(f'Symbols/{SYMBOL}/{INTERVAL}.csv', index_col = 'time')
+    db['hhv20'] = st.hhv20(db['high'])
+    db['llv20'] = st.llv20(db['low'])
+    db['hhv5'] = st.hhv5(db['high'])
+    db['llv5'] = st.llv5(db['low'])
+
+    print('database read from saved')
 
 #orders
 if ORDER_TYPE == 'stop':
@@ -51,7 +62,7 @@ if ORDER_TYPE == 'stop':
         enter_level
         ]
 
-if ORDER_TYPE == 'market':
+elif ORDER_TYPE == 'market':
 
     if TREND_FOLLOWING == 'on':
         
@@ -72,3 +83,5 @@ trading_system = st.apply_trading_system(
     db, INSTRUMENT, direction, ORDER_TYPE, 
     OPERATION_MONEY, enter_rules, exit_rules, TICK, 
     *system_args)
+
+print('Trading system succesfully applied')
