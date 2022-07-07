@@ -12,7 +12,7 @@ import orders
 
 status = 'online'
 ORDER_TYPE = 'market'
-direction = 'long'
+direction = 'short'
 TREND_FOLLOWING = 'off'
 SYMBOL = 'BTCEUR'
 INTERVAL = '1d'

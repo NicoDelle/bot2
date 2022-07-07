@@ -15,9 +15,10 @@ def set_type(db):
     df = pd.DataFrame()
 
     for column in db.columns:
-        
-        df[column] = gt.tonumerical(db[column])    
-        df.set_index(db.index, inplace = True, drop = True)
+        if (column != 'time'):
+            df[column] = gt.tonumerical(db[column])    
+    
+    df.set_index(db.time, inplace = True, drop = True)
         
     return(df)
 
@@ -108,7 +109,9 @@ def db_from_csv(symbol, interval, limit, status = 'online'):
     import pandas as pd
     
     #reads the csv
-    db1 = pd.read_csv(f'{interval}klines-{symbol}.csv', index_col = 'time')
+    db1 = pd.read_csv(
+        f'Symbols/{symbol}/{interval}.csv', index_col = 'time'
+        )
     timestamp = int(db1.timestamp.iloc[-1] + (db1.timestamp.iloc[-1] - db1.timestamp.iloc[-2]))
 
     #if an internet connection is available, updates the csv
@@ -125,7 +128,7 @@ def db_from_csv(symbol, interval, limit, status = 'online'):
                 repeat = True
                 
             db = pd.concat([db1, db2])
-            db.to_csv(f'{interval}klines-{symbol}.csv')
+            db.to_csv(f'Symbols/{symbol}/{interval}.csv')
             print('succesfully updated the database')
 
             return db, repeat
@@ -137,14 +140,14 @@ def db_from_csv(symbol, interval, limit, status = 'online'):
             print("failed to retrieve new data, the database won't be updated")
             print('please check your connection or modify your settings (it may be an input error). STATUS: offline')
                 
-            return set_type(db1), repeat
+            return db1, repeat
 
         elif db2 == 'updated':
 
             repeat = False
             print('data were up-to-date')
 
-            return set_type(db1), repeat
+            return db1, repeat
 
     else:
 
@@ -177,7 +180,7 @@ def make_db(*parameters):
     #checks wether the csv file exists or not
     try:
     
-        csv = open(f'{interval}klines-{symbol}.csv')
+        csv = open(f'Symbols/{symbol}/{interval}.csv')
         file_status = 'file already exists'
         csv.close()
 
@@ -212,7 +215,7 @@ def make_db(*parameters):
                 print('seems like lots of data uh?\n')
         
         print('database succesfully created')
-        db.to_csv(f'{interval}klines-{symbol}.csv')
+        db.to_csv(f'Symbols/{symbol}/{interval}.csv')
 
     else:
         #if any other try failed, returns an empty list as a sentinel value
